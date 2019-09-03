@@ -172,8 +172,22 @@ public class RedissonLock extends RedissonExpirable implements RLock {
 
     private void lock(long leaseTime, TimeUnit unit, boolean interruptibly) throws InterruptedException {
         long threadId = Thread.currentThread().getId();
+        /*
+        if (redis.call('exists', KEYS[1]) == 0) then
+        redis.call('hset', KEYS[1], ARGV[2], 1);
+        redis.call('pexpire', KEYS[1], ARGV[1]);
+        return nil;
+    end ;
+    -- 可重入锁
+    if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then
+        redis.call('hincrby', KEYS[1], ARGV[2], 1);
+        redis.call('pexpire', KEYS[1], ARGV[1]);
+        return nil;
+    end ;
+    return redis.call('pttl', KEYS[1]);
+         */
         Long ttl = tryAcquire(leaseTime, unit, threadId);
-        // lock acquired
+        // lock acquired，当返回 null 的时候代表获取到锁了
         if (ttl == null) {
             return;
         }
@@ -235,7 +249,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
         return ttlRemainingFuture;
     }
 
-    private <T> RFuture<Long> tryAcquireAsync(long leaseTime, TimeUnit unit, long threadId) {
+    private RFuture<Long> tryAcquireAsync(long leaseTime, TimeUnit unit, long threadId) {
         if (leaseTime != -1) {
             return tryLockInnerAsync(leaseTime, unit, threadId, RedisCommands.EVAL_LONG);
         }
@@ -312,7 +326,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
                     "return 1; " +
                 "end; " +
                 "return 0;",
-            Collections.<Object>singletonList(getName()), 
+            Collections.singletonList(getName()),
             internalLockLeaseTime, getLockName(threadId));
     }
 
@@ -347,7 +361,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
                       "return nil; " +
                   "end; " +
                   "return redis.call('pttl', KEYS[1]);",
-                    Collections.<Object>singletonList(getName()), internalLockLeaseTime, getLockName(threadId));
+                    Collections.singletonList(getName()), internalLockLeaseTime, getLockName(threadId));
     }
     
     private void acquireFailed(long threadId) {
@@ -491,7 +505,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
                 + "else "
                 + "return 0 "
                 + "end",
-                Arrays.<Object>asList(getName(), getChannelName()), LockPubSub.UNLOCK_MESSAGE);
+                Arrays.asList(getName(), getChannelName()), LockPubSub.UNLOCK_MESSAGE);
     }
 
     @Override
@@ -557,7 +571,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
                     "return 1; "+
                 "end; " +
                 "return nil;",
-                Arrays.<Object>asList(getName(), getChannelName()), LockPubSub.UNLOCK_MESSAGE, internalLockLeaseTime, getLockName(threadId));
+                Arrays.asList(getName(), getChannelName()), LockPubSub.UNLOCK_MESSAGE, internalLockLeaseTime, getLockName(threadId));
 
     }
     

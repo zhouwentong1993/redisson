@@ -323,7 +323,7 @@ public class RedissonMultiLock implements RLock {
             return RedissonPromise.newSucceededFuture(null);
         }
         
-        RPromise<Void> result = new RedissonPromise<Void>();
+        RPromise<Void> result = new RedissonPromise<>();
         AtomicInteger counter = new AtomicInteger(locks.size());
         for (RLock lock : locks) {
             lock.unlockAsync(threadId).onComplete((res, e) -> {
