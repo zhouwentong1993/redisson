@@ -129,12 +129,14 @@ public class CommandAsyncService implements CommandAsyncExecutor {
     @Override
     public <V> V get(RFuture<V> future) {
         if (!future.isDone()) {
+            // 惯用 pattern。
             CountDownLatch l = new CountDownLatch(1);
             future.onComplete((res, e) -> l.countDown());
 
             boolean interrupted = false;
             while (!future.isDone()) {
                 try {
+                    // 阻塞等待
                     l.await();
                 } catch (InterruptedException e) {
                     interrupted = true;
@@ -344,6 +346,7 @@ public class CommandAsyncService implements CommandAsyncExecutor {
         return mainPromise;
     }
 
+    @Override
     public <V> RedisException convertException(RFuture<V> future) {
         if (future.cause() instanceof RedisException) {
             return (RedisException) future.cause();

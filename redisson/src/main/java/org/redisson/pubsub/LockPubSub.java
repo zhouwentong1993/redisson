@@ -44,7 +44,7 @@ public class LockPubSub extends PublishSubscribe<RedissonLockEntry> {
             if (runnableToExecute != null) {
                 runnableToExecute.run();
             }
-
+            // 释放一个信号量
             value.getLatch().release();
         } else if (message.equals(READ_UNLOCK_MESSAGE)) {
             while (true) {

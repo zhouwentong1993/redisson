@@ -444,7 +444,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
                 currentTime = System.currentTimeMillis();
                 // 如果剩余时间还够的话
                 if (ttl >= 0 && ttl < time) {
-                    // 再次尝试获取
+                    // 共享 entry，获得一个信号量
                     getEntry(threadId).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
                 } else {
                     getEntry(threadId).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
@@ -568,13 +568,16 @@ public class RedissonLock extends RedissonExpirable implements RLock {
 
     protected RFuture<Boolean> unlockInnerAsync(long threadId) {
         return commandExecutor.evalWriteAsync(getName(), LongCodec.INSTANCE, RedisCommands.EVAL_BOOLEAN,
+                // 如果该锁被其他线程锁持有
                 "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
                     "return nil;" +
                 "end; " +
+                        // 如果当前 -1 仍然大于0，重入次数 > 1，执行超时操作，无法删除锁
                 "local counter = redis.call('hincrby', KEYS[1], ARGV[3], -1); " +
                 "if (counter > 0) then " +
                     "redis.call('pexpire', KEYS[1], ARGV[2]); " +
                     "return 0; " +
+                        // 如果已经没有锁了，删除 key，发布事件，通知解锁事件
                 "else " +
                     "redis.call('del', KEYS[1]); " +
                     "redis.call('publish', KEYS[2], ARGV[1]); " +
