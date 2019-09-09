@@ -351,11 +351,6 @@ public class RedissonMultiLock implements RLock {
     
     @Override
     public boolean tryLock(long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException {
-//        try {
-//            return tryLockAsync(waitTime, leaseTime, unit).get();
-//        } catch (ExecutionException e) {
-//            throw new IllegalStateException(e);
-//        }
         long newLeaseTime = -1;
         if (leaseTime != -1) {
             if (waitTime == -1) {
@@ -374,6 +369,7 @@ public class RedissonMultiLock implements RLock {
         
         int failedLocksLimit = failedLocksLimit();
         List<RLock> acquiredLocks = new ArrayList<>(locks.size());
+        // 遍历 lock，挨个试
         for (ListIterator<RLock> iterator = locks.listIterator(); iterator.hasNext();) {
             RLock lock = iterator.next();
             boolean lockAcquired;
