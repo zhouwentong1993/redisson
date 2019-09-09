@@ -158,12 +158,11 @@ public class CommandAsyncService implements CommandAsyncExecutor {
         throw convertException(future);
     }
 
+    // 通过 CountDownLatch 实现，当 future 完成时，countdown。await 指定时间，如果没有超时，就不算了。
     @Override
     public boolean await(RFuture<?> future, long timeout, TimeUnit timeoutUnit) throws InterruptedException {
         CountDownLatch l = new CountDownLatch(1);
-        future.onComplete((res, e) -> {
-            l.countDown();
-        });
+        future.onComplete((res, e) -> l.countDown());
         return l.await(timeout, timeoutUnit);
     }
     

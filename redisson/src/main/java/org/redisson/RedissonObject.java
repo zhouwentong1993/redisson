@@ -67,6 +67,7 @@ public abstract class RedissonObject implements RObject {
         this(commandExecutor.getConnectionManager().getCodec(), commandExecutor, name);
     }
 
+    // 传入的 future，等待
     protected boolean await(RFuture<?> future, long timeout, TimeUnit timeoutUnit) throws InterruptedException {
         return commandExecutor.await(future, timeout, timeoutUnit);
     }

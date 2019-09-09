@@ -399,15 +399,20 @@ public class RedissonLock extends RedissonExpirable implements RLock {
         current = System.currentTimeMillis();
         // 订阅该线程的 Redis 通知
         RFuture<RedissonLockEntry> subscribeFuture = subscribe(threadId);
-        // 如果没有等到,    //await 方法内部是用CountDownLatch来实现阻塞，获取subscribe异步执行的结果（应用了Netty 的 Future）
+        // 如果没有等到,
+        // await 方法内部是用CountDownLatch来实现阻塞，获取subscribe异步执行的结果（应用了Netty 的 Future）
+        // 如果在指定时间里没有获取到结果
         if (!await(subscribeFuture, time, TimeUnit.MILLISECONDS)) {
+            // 如果任务没有被取消，通常是因为结束了
             if (!subscribeFuture.cancel(false)) {
+                // 在结束时取消订阅 Redis 时间
                 subscribeFuture.onComplete((res, e) -> {
                     if (e == null) {
                         unsubscribe(subscribeFuture, threadId);
                     }
                 });
             }
+            // 当前锁获取失败
             acquireFailed(threadId);
             return false;
         }
@@ -439,7 +444,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
                 currentTime = System.currentTimeMillis();
                 // 如果剩余时间还够的话
                 if (ttl >= 0 && ttl < time) {
-                    // 这一块暂时不明白，再次尝试获取
+                    // 再次尝试获取
                     getEntry(threadId).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
                 } else {
                     getEntry(threadId).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
