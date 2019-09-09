@@ -130,9 +130,7 @@ public class CommandAsyncService implements CommandAsyncExecutor {
     public <V> V get(RFuture<V> future) {
         if (!future.isDone()) {
             CountDownLatch l = new CountDownLatch(1);
-            future.onComplete((res, e) -> {
-                l.countDown();
-            });
+            future.onComplete((res, e) -> l.countDown());
 
             boolean interrupted = false;
             while (!future.isDone()) {

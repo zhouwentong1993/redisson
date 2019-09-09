@@ -492,15 +492,6 @@ public class RedissonLock extends RedissonExpirable implements RLock {
             }
         }
         
-//        Future<Void> future = unlockAsync();
-//        future.awaitUninterruptibly();
-//        if (future.isSuccess()) {
-//            return;
-//        }
-//        if (future.cause() instanceof IllegalMonitorStateException) {
-//            throw (IllegalMonitorStateException)future.cause();
-//        }
-//        throw commandExecutor.convertException(future);
     }
 
     @Override
@@ -596,7 +587,7 @@ public class RedissonLock extends RedissonExpirable implements RLock {
     
     @Override
     public RFuture<Void> unlockAsync(long threadId) {
-        RPromise<Void> result = new RedissonPromise<Void>();
+        RPromise<Void> result = new RedissonPromise<>();
         RFuture<Boolean> future = unlockInnerAsync(threadId);
 
         future.onComplete((opStatus, e) -> {
